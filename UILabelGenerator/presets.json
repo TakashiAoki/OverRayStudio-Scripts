@@ -1,0 +1,91 @@
+{
+  "_comment": "UILabelGenerator presets / Over Ray Studio",
+
+  "fonts": [
+    { "label": "Square721BT-RomanExtended", "postscript": "Square721BT-RomanExtended" },
+    { "label": "Arial",                     "postscript": "ArialMT" },
+    { "label": "Arial Bold",                "postscript": "Arial-BoldMT" },
+    { "label": "Helvetica",                 "postscript": "Helvetica" },
+    { "label": "Helvetica Neue",            "postscript": "HelveticaNeue" },
+    { "label": "Helvetica Neue Light",      "postscript": "HelveticaNeue-Light" },
+    { "label": "Eurostile",                 "postscript": "Eurostile" },
+    { "label": "Eurostile Bold",            "postscript": "Eurostile-Bold" },
+    { "label": "OCR A Std",                 "postscript": "OCRAStd" },
+    { "label": "Courier New",               "postscript": "CourierNewPSMT" }
+  ],
+
+  "styles": [
+    { "id": "single_en",    "label": "1単語 (英語)"         },
+    { "id": "multi_en",     "label": "複数単語 (英語)"      },
+    { "id": "abbr_en",      "label": "略語 (英語)"          },
+    { "id": "single_jp",    "label": "1単語 (日本語)"       },
+    { "id": "multi_jp",     "label": "複数単語 (日本語)"    },
+    { "id": "mixed",        "label": "英/日 混在"           },
+    { "id": "mixed_abbr",   "label": "略語/フルネーム 混在" }
+  ],
+
+  "glossary_categories": [
+    "ブート･起動",
+    "状態･フェーズ",
+    "脅威･警戒",
+    "スキャン･識別",
+    "通信･ネットワーク",
+    "計測･バイタル",
+    "推進･出力",
+    "機器･装置",
+    "神経･生体",
+    "宇宙環境",
+    "物質･材料"
+  ],
+
+  "presets": [
+    {
+      "id": "sip_sat",
+      "label": "SIP / SAT指揮車",
+      "keywords": ["SIP", "SAT", "指揮車", "警察", "作戦"],
+      "categories": ["状態･フェーズ", "脅威･警戒", "通信･ネットワーク", "機器･装置", "スキャン･識別"]
+    },
+    {
+      "id": "navigation",
+      "label": "ナビゲーション / 地図",
+      "keywords": ["ナビゲーション", "地図", "位置", "経路"],
+      "categories": ["状態･フェーズ", "計測･バイタル", "推進･出力", "スキャン･識別"]
+    },
+    {
+      "id": "boot",
+      "label": "ブート / 起動シーン",
+      "keywords": ["起動", "初期化", "システム"],
+      "categories": ["ブート･起動", "状態･フェーズ"]
+    },
+    {
+      "id": "combat",
+      "label": "戦闘 / ミリタリー",
+      "keywords": ["戦闘", "兵装", "作戦", "ターゲット"],
+      "categories": ["脅威･警戒", "状態･フェーズ", "通信･ネットワーク", "機器･装置", "スキャン･識別"]
+    },
+    {
+      "id": "medical",
+      "label": "医療 / 生体",
+      "keywords": ["医療", "生体", "診断", "バイタル"],
+      "categories": ["神経･生体", "計測･バイタル", "物質･材料", "状態･フェーズ"]
+    },
+    {
+      "id": "space",
+      "label": "宇宙 / SF",
+      "keywords": ["宇宙", "軌道", "推進", "センサー"],
+      "categories": ["宇宙環境", "推進･出力", "ブート･起動", "計測･バイタル", "機器･装置"]
+    },
+    {
+      "id": "network",
+      "label": "通信 / ネットワーク",
+      "keywords": ["通信", "ネットワーク", "リンク", "データ"],
+      "categories": ["通信･ネットワーク", "状態･フェーズ", "機器･装置", "スキャン･識別"]
+    },
+    {
+      "id": "custom",
+      "label": "カスタム",
+      "keywords": [],
+      "categories": []
+    }
+  ]
+}

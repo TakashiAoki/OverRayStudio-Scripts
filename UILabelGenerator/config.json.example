@@ -1,0 +1,13 @@
+{
+  "_comment": "UILabelGenerator config / Over Ray Studio",
+  "anthropic_api_key": "YOUR_API_KEY_HERE",
+  "last_settings": {
+    "preset_id":   "sip_sat",
+    "keywords":    "",
+    "style_id":    "single_en",
+    "font_label":  "Square721BT-RomanExtended",
+    "font_size":   8,
+    "align":       "CENTER",
+    "text_anchor": "CENTER"
+  }
+}
