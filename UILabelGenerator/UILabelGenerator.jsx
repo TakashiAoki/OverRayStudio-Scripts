@@ -1,4 +1,4 @@
-// UILabelGenerator.jsx  Ver.1.0.1
+// UILabelGenerator.jsx  Ver.1.0.2
 // Copyright (c) 2026 Over Ray Studio / Takashi Aoki @voyager_vision. All rights reserved.
 // LastUpdate: 2026/03/27
 // 選択したボタンパスにAI生成ラベルテキストを配置します
@@ -506,13 +506,19 @@ function setFont(tf, postscriptName) {
 function setTextColorFromPalette(shape, tf, fillRGB) {
     var brightness = (fillRGB.r + fillRGB.g + fillRGB.b) / 3;
 
-    // パレット内で輝度を反転させた最近傍値を選ぶ
+    // 輝度を反転させた値を起点に最近傍パレット値を選ぶ
     var targetBrightness = 255 - brightness;
     var closest = GRAY_PALETTE[0];
     var minDiff = Math.abs(GRAY_PALETTE[0] - targetBrightness);
     for (var i = 1; i < GRAY_PALETTE.length; i++) {
         var diff = Math.abs(GRAY_PALETTE[i] - targetBrightness);
         if (diff < minDiff) { minDiff = diff; closest = GRAY_PALETTE[i]; }
+    }
+
+    // 文字色が塗色と近すぎる場合（差が32未満）は反対側に寄せる
+    // 例: 塗色128 → target127 → closest128 → 差0 → 26に補正
+    if (Math.abs(closest - brightness) < 32) {
+        closest = brightness >= 128 ? 26 : 230;
     }
 
     var col = new RGBColor();
