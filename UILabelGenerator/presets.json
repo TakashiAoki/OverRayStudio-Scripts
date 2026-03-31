@@ -3,6 +3,10 @@
 
   "fonts": [
     { "label": "Square721BT-RomanExtended", "postscript": "Square721BT-RomanExtended" },
+    { "label": "Square721BT-BoldExtended",  "postscript": "Square721BT-BoldExtended"  },
+    { "label": "Square721BT-Roman",         "postscript": "Square721BT-Roman"         },
+    { "label": "Square721BT-Bold",          "postscript": "Square721BT-Bold"          },
+    { "label": "SavedByZero-Regular",       "postscript": "SavedByZero-Regular"       },
     { "label": "Arial",                     "postscript": "ArialMT" },
     { "label": "Arial Bold",                "postscript": "Arial-BoldMT" },
     { "label": "Helvetica",                 "postscript": "Helvetica" },
@@ -36,6 +40,29 @@
     "神経･生体",
     "宇宙環境",
     "物質･材料"
+  ],
+
+  "ui_pattern_hints": [
+    {
+      "keywords": ["テンキー", "numpad", "数字キー", "計算機", "電卓", "keypad"],
+      "hint": "This appears to be a numeric keypad layout. Assign digits 0-9, decimal point, arithmetic operators (+, -, *, /), CLEAR and ENTER based on button position and size. Wider or taller buttons likely span multiple grid cells (e.g. 0 key is wide, ENTER key is tall). Fill any remaining buttons with plausible function keys such as DEL, ESC, TAB, or SF/military equivalents."
+    },
+    {
+      "keywords": ["電話", "ダイヤル", "phone", "dial", "受話器"],
+      "hint": "This appears to be a phone keypad layout. Assign digits 0-9, *, # based on position. Include CALL, END, HOLD, MUTE, or similar telecom function keys for remaining buttons."
+    },
+    {
+      "keywords": ["方向キー", "矢印", "dpad", "方向パッド", "十字キー"],
+      "hint": "This appears to be a directional pad layout. Assign UP, DOWN, LEFT, RIGHT to edge buttons and CENTER or OK/ENTER to the center button. Fill remaining buttons with CANCEL, BACK, MENU, SELECT as appropriate."
+    },
+    {
+      "keywords": ["音量", "スライダー", "volume", "mixer", "ミキサー"],
+      "hint": "This appears to be a volume or mixer control layout. Assign VOL+, VOL-, MUTE, CH+, CH-, or level indicators. Use SF/military equivalents like GAIN, ATTENUATE, SIGNAL, LEVEL for remaining buttons."
+    },
+    {
+      "keywords": ["メニュー", "タブ", "menu", "tab", "ナビ"],
+      "hint": "This appears to be a menu or tab navigation layout. Assign section names relevant to the scene context, ensuring buttons in the same row or column share a logical category."
+    }
   ],
 
   "presets": [

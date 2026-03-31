@@ -1,10 +1,10 @@
-// UILabelGenerator.jsx  Ver.1.0.8
+// UILabelGenerator.jsx  Ver.1.1.0
 // Copyright (c) 2026 Over Ray Studio / Takashi Aoki @voyager_vision. All rights reserved.
 // LastUpdate: 2026/03/31
 // 選択したボタンパスにAI生成ラベルテキストを配置します
 
 var SCRIPT_NAME    = "UILabelGenerator";
-var SCRIPT_VERSION = "1.0.8";
+var SCRIPT_VERSION = "1.1.0";
 
 // ============================================================
 // 設定ファイルパス（スクリプトと同じフォルダ）
@@ -54,6 +54,9 @@ var GRAY_PALETTE = [0, 26, 51, 77, 102, 128, 153, 179, 204, 230, 242, 255];
 
     // 用語集ロード＋カテゴリ絞り込み
     var glossaryTerms = loadGlossaryTerms(settings.categories);
+
+    // キーワードからUIパターンヒントを検索
+    settings.patternHint = findPatternHint(settings.keywords, presets);
 
     // Claude API でラベルリスト生成
     var labels = generateLabels(config.anthropic_api_key, buttonInfoList, settings, glossaryTerms);
@@ -322,6 +325,23 @@ function getFillRGB(shape) {
 }
 
 // ============================================================
+// キーワードからUIパターンヒントを検索
+// ============================================================
+function findPatternHint(keywords, presets) {
+    if (!keywords || !presets.ui_pattern_hints) return "";
+    var kw = keywords.toLowerCase();
+    for (var i = 0; i < presets.ui_pattern_hints.length; i++) {
+        var hint = presets.ui_pattern_hints[i];
+        for (var j = 0; j < hint.keywords.length; j++) {
+            if (kw.indexOf(hint.keywords[j].toLowerCase()) !== -1) {
+                return hint.hint;
+            }
+        }
+    }
+    return "";
+}
+
+// ============================================================
 // 用語集CSVからカテゴリ絞り込みして用語リストを返す
 // ============================================================
 function loadGlossaryTerms(categories) {
@@ -427,6 +447,7 @@ function generateLabels(apiKey, buttonInfoList, settings, glossaryTerms) {
         "- No duplicate labels\\n" +
         "- IMPORTANT: Output raw JSON array only. No markdown, no code blocks, no explanation.\\n" +
         "- Example output: [\"SCAN\",\"TARGET\",\"NAV\"]\\n\\n" +
+        (settings.patternHint ? "UI Pattern Hint:\\n" + escapeForJSON(settings.patternHint) + "\\n\\n" : "") +
         "Button layout:\\n" + btnDesc.join("\\n") +
         gridInfo +
         glossarySample
@@ -630,8 +651,7 @@ function readJSON(path) {
     f.open("r");
     var src = f.read();
     f.close();
-    // コメント行を除去してからeval
-    src = src.replace(/\/\/[^\n]*/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
+    // _comment キーはevalでそのまま読み込まれるので除去不要
     try { return eval("(" + src + ")"); } catch (e) { return null; }
 }
 
