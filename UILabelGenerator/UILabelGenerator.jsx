@@ -1,6 +1,6 @@
-// UILabelGenerator.jsx  Ver.1.0.2
+// UILabelGenerator.jsx  Ver.1.0.5
 // Copyright (c) 2026 Over Ray Studio / Takashi Aoki @voyager_vision. All rights reserved.
-// LastUpdate: 2026/03/27
+// LastUpdate: 2026/03/31
 // 選択したボタンパスにAI生成ラベルテキストを配置します
 
 // ============================================================
@@ -193,7 +193,7 @@ function showDialog(config, presets, shapeCount) {
 }
 
 // ============================================================
-// ボタン情報取得
+// ボタン情報取得（グリッド行・列インデックス付き）
 // ============================================================
 function getButtonInfoList(shapes) {
     var list = [];
@@ -222,10 +222,65 @@ function getButtonInfoList(shapes) {
             innerW:  innerW,
             innerH:  innerH,
             fillRGB: fillRGB,
-            strokeW: strokeW
+            strokeW: strokeW,
+            row: -1,  // detectGrid()で設定
+            col: -1
         });
     }
+
+    // グリッド構造を検出して row/col を付与
+    detectGrid(list);
     return list;
+}
+
+// ============================================================
+// グリッド検出: centerX/Yの近似値でグループ化して行・列番号を付与
+// ============================================================
+function detectGrid(list) {
+    var TOLERANCE = 10; // px以内は同じ行/列とみなす
+
+    // centerX を昇順ソートして列グループを作成
+    var colGroups = [];
+    for (var i = 0; i < list.length; i++) {
+        var cx = list[i].centerX;
+        var found = false;
+        for (var g = 0; g < colGroups.length; g++) {
+            if (Math.abs(colGroups[g] - cx) <= TOLERANCE) {
+                found = true; break;
+            }
+        }
+        if (!found) colGroups.push(cx);
+    }
+    colGroups.sort(function(a, b) { return a - b; });
+
+    // centerY を昇順ソートして行グループ（Y軸は反転）
+    var rowGroups = [];
+    for (var i = 0; i < list.length; i++) {
+        var cy = list[i].centerY;
+        var found = false;
+        for (var g = 0; g < rowGroups.length; g++) {
+            if (Math.abs(rowGroups[g] - cy) <= TOLERANCE) {
+                found = true; break;
+            }
+        }
+        if (!found) rowGroups.push(cy);
+    }
+    // IllustratorはY軸が上方向プラスなので降順＝上が行1
+    rowGroups.sort(function(a, b) { return b - a; });
+
+    // 各ボタンにrow/colを付与（1始まり）
+    for (var i = 0; i < list.length; i++) {
+        for (var g = 0; g < colGroups.length; g++) {
+            if (Math.abs(colGroups[g] - list[i].centerX) <= TOLERANCE) {
+                list[i].col = g + 1; break;
+            }
+        }
+        for (var g = 0; g < rowGroups.length; g++) {
+            if (Math.abs(rowGroups[g] - list[i].centerY) <= TOLERANCE) {
+                list[i].row = g + 1; break;
+            }
+        }
+    }
 }
 
 // ============================================================
@@ -322,16 +377,31 @@ function trim(s) {
 // Claude API でラベルリスト生成（uilg_helper.py 経由）
 // ============================================================
 function generateLabels(apiKey, buttonInfoList, settings, glossaryTerms) {
+    // ボタン説明：サイズ＋グリッド位置
     var btnDesc = [];
+    var maxRow = 0; var maxCol = 0;
     for (var i = 0; i < buttonInfoList.length; i++) {
         var b = buttonInfoList[i];
-        btnDesc.push("Button " + (i + 1) + ": w=" + Math.round(b.innerW) + "px h=" + Math.round(b.innerH) + "px");
+        if (b.row > maxRow) maxRow = b.row;
+        if (b.col > maxCol) maxCol = b.col;
+        var desc = "Button " + (i + 1) + ": w=" + Math.round(b.innerW) + "px h=" + Math.round(b.innerH) + "px";
+        if (b.row > 0 && b.col > 0) desc += " row=" + b.row + " col=" + b.col;
+        btnDesc.push(desc);
+    }
+
+    // グリッド情報
+    var gridInfo = "";
+    if (maxRow > 1 || maxCol > 1) {
+        gridInfo = "\\nGrid structure: " + maxRow + " rows x " + maxCol + " cols detected.\\n" +
+            "- Buttons in the same row are contextually related (parallel functions)\\n" +
+            "- Buttons in the same col are hierarchically related (sequential/layered)\\n" +
+            "- Make labels coherent within each row and column\\n";
     }
 
     var glossarySample = "";
     if (glossaryTerms.length > 0) {
         var sample = glossaryTerms.slice(0, 100);
-        glossarySample = "\\nReference terms (use as inspiration):\\n" + sample.join(", ");
+        glossarySample = "\\nVocabulary inspiration (use freely as a springboard, add original terms as needed):\\n" + sample.join(", ");
     }
 
     var kwText = settings.keywords ? "\\nAdditional keywords: " + escapeForJSON(settings.keywords) : "";
@@ -347,9 +417,10 @@ function generateLabels(apiKey, buttonInfoList, settings, glossaryTerms) {
         "- Shorter is better. Prioritize abbreviations and concise terms.\\n" +
         "- Labels must suit the scene and feel authentic to SF/military UI aesthetics\\n" +
         "- No duplicate labels\\n" +
-        "- Return ONLY a JSON array of strings. Example: [\\\"SCAN\\\",\\\"TARGET\\\",\\\"NAV\\\"]\\n\\n" +
-        "Button sizes:\\n" + btnDesc.join("\\n") +
-        glossarySample;
+        "- Return ONLY a JSON array of strings ordered by Button number. Example: [\"SCAN\",\"TARGET\",\"NAV\"]\\n\\n" +
+        "Button layout:\\n" + btnDesc.join("\\n") +
+        gridInfo +
+        glossarySample
 
     // リクエストJSONをヘルパー用フォーマットで書き出す
     var reqFile  = new File("/tmp/_aab_req.json");
@@ -365,7 +436,7 @@ function generateLabels(apiKey, buttonInfoList, settings, glossaryTerms) {
         '  "body": {\n' +
         '    "model": "claude-haiku-4-5-20251001",\n' +
         '    "max_tokens": 512,\n' +
-        '    "messages": [{"role": "user", "content": "' + promptText + '"}]\n' +
+        '    "messages": [{"role": "user", "content": "' + escapeForJSON(promptText) + '"}]\n' +
         '  }\n' +
         '}';
 
@@ -442,7 +513,13 @@ function generateLabels(apiKey, buttonInfoList, settings, glossaryTerms) {
 // JSON文字列用エスケープ
 // ============================================================
 function escapeForJSON(s) {
-    return s.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n").replace(/\r/g, "");
+    return String(s)
+        .replace(/\\/g, "\\\\")
+        .replace(/"/g,  '\\"')
+        .replace(/\n/g, "\\n")
+        .replace(/\r/g, "")
+        .replace(/\t/g, "\\t")
+        .replace(/[\x00-\x1f\x7f]/g, "");
 }
 // ============================================================
 // テキスト配置
