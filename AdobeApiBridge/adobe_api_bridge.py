@@ -52,7 +52,9 @@ def process():
             req = json.loads(f.read())
 
         api_key = req.get("api_key", "")
+        caller  = req.get("caller",  "unknown")
         body    = req.get("body",    {})
+        print(f"  → 呼び出し元: {caller}")
         print(f"  → API呼び出し中... (model: {body.get('model', '')})")
 
         resp   = call_api(api_key, body)

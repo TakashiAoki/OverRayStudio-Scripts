@@ -1,7 +1,10 @@
-// UILabelGenerator.jsx  Ver.1.0.5
+// UILabelGenerator.jsx  Ver.1.0.8
 // Copyright (c) 2026 Over Ray Studio / Takashi Aoki @voyager_vision. All rights reserved.
 // LastUpdate: 2026/03/31
 // 選択したボタンパスにAI生成ラベルテキストを配置します
+
+var SCRIPT_NAME    = "UILabelGenerator";
+var SCRIPT_VERSION = "1.0.8";
 
 // ============================================================
 // 設定ファイルパス（スクリプトと同じフォルダ）
@@ -96,7 +99,7 @@ function getAllShapes(item) {
 function showDialog(config, presets, shapeCount) {
     var last = config.last_settings;
 
-    var dlg = new Window("dialog", "UILabelGenerator  [" + shapeCount + " shapes]");
+    var dlg = new Window("dialog", "UILabelGenerator  Ver." + SCRIPT_VERSION + "  [" + shapeCount + " shapes]");
     dlg.orientation = "column";
     dlg.alignChildren = ["fill", "top"];
     dlg.spacing = 8;
@@ -401,7 +404,12 @@ function generateLabels(apiKey, buttonInfoList, settings, glossaryTerms) {
     var glossarySample = "";
     if (glossaryTerms.length > 0) {
         var sample = glossaryTerms.slice(0, 100);
-        glossarySample = "\\nVocabulary inspiration (use freely as a springboard, add original terms as needed):\\n" + sample.join(", ");
+        // 用語内のシングルクォート・特殊文字をサニタイズ
+        var sanitized = [];
+        for (var si = 0; si < sample.length; si++) {
+            sanitized.push(sample[si].replace(/'/g, "").replace(/[^\x20-\x7E\u3000-\u9FFF]/g, ""));
+        }
+        glossarySample = "\\nVocabulary inspiration (use freely as a springboard, add original terms as needed):\\n" + sanitized.join(", ");
     }
 
     var kwText = settings.keywords ? "\\nAdditional keywords: " + escapeForJSON(settings.keywords) : "";
@@ -417,7 +425,8 @@ function generateLabels(apiKey, buttonInfoList, settings, glossaryTerms) {
         "- Shorter is better. Prioritize abbreviations and concise terms.\\n" +
         "- Labels must suit the scene and feel authentic to SF/military UI aesthetics\\n" +
         "- No duplicate labels\\n" +
-        "- Return ONLY a JSON array of strings ordered by Button number. Example: [\"SCAN\",\"TARGET\",\"NAV\"]\\n\\n" +
+        "- IMPORTANT: Output raw JSON array only. No markdown, no code blocks, no explanation.\\n" +
+        "- Example output: [\"SCAN\",\"TARGET\",\"NAV\"]\\n\\n" +
         "Button layout:\\n" + btnDesc.join("\\n") +
         gridInfo +
         glossarySample
@@ -433,6 +442,7 @@ function generateLabels(apiKey, buttonInfoList, settings, glossaryTerms) {
     var reqBody =
         '{\n' +
         '  "api_key": "' + escapeForJSON(apiKey) + '",\n' +
+        '  "caller": "' + SCRIPT_NAME + ' Ver.' + SCRIPT_VERSION + '",\n' +
         '  "body": {\n' +
         '    "model": "claude-haiku-4-5-20251001",\n' +
         '    "max_tokens": 512,\n' +
@@ -495,7 +505,14 @@ function generateLabels(apiKey, buttonInfoList, settings, glossaryTerms) {
     }
 
     var rawText = apiResp.content[0].text;
-    var arrMatch = rawText.match(/\[[\s\S]*?\]/);
+
+    // コードブロック（```json ... ``` や ``` ... ```）を除去してから抽出
+    var cleaned = rawText.replace(/```[a-z]*\n?/gi, "").replace(/```/g, "").replace(/^\s+|\s+$/g, "");
+    var arrMatch = cleaned.match(/\[[\s\S]*?\]/);
+    if (!arrMatch) {
+        // フォールバック：元テキストから直接抽出
+        arrMatch = rawText.match(/\[[\s\S]*?\]/);
+    }
     if (!arrMatch) {
         alert("ラベル配列の抽出に失敗しました:\n" + rawText.substring(0, 300));
         return null;
