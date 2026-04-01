@@ -45,7 +45,7 @@
   "ui_pattern_hints": [
     {
       "keywords": ["テンキー", "numpad", "数字キー", "計算機", "電卓", "keypad"],
-      "hint": "This appears to be a numeric keypad layout. Assign digits 0-9, decimal point, arithmetic operators (+, -, *, /), CLEAR and ENTER based on button position and size. Wider or taller buttons likely span multiple grid cells (e.g. 0 key is wide, ENTER key is tall). Fill any remaining buttons with plausible function keys such as DEL, ESC, TAB, or SF/military equivalents."
+      "hint": "This is a numeric keypad layout. Use button position (row/col) and size (ratio) to assign labels following the standard numpad arrangement. Standard layout from top to bottom: Row 1: function keys (CLEAR, =, /, *). Row 2: 7, 8, 9, minus(-). Row 3: 4, 5, 6, plus(+). Row 4: 1, 2, 3, ENTER(tall/wide). Row 5: 0(wide), decimal(.), ENTER(continued). Wide buttons (ratio>=2.0) are likely the 0 key. Tall buttons (ratio<=0.6) are likely the ENTER key. Fill any remaining buttons with plausible function keys such as DEL, ESC, TAB, or SF/military equivalents."
     },
     {
       "keywords": ["電話", "ダイヤル", "phone", "dial", "受話器"],

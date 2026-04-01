@@ -1,10 +1,10 @@
-// UILabelGenerator.jsx  Ver.1.1.0
+// UILabelGenerator.jsx  Ver.1.1.2
 // Copyright (c) 2026 Over Ray Studio / Takashi Aoki @voyager_vision. All rights reserved.
-// LastUpdate: 2026/03/31
+// LastUpdate: 2026/04/01
 // 選択したボタンパスにAI生成ラベルテキストを配置します
 
 var SCRIPT_NAME    = "UILabelGenerator";
-var SCRIPT_VERSION = "1.1.0";
+var SCRIPT_VERSION = "1.1.2";
 
 // ============================================================
 // 設定ファイルパス（スクリプトと同じフォルダ）
@@ -236,6 +236,14 @@ function getButtonInfoList(shapes) {
 
     // グリッド構造を検出して row/col を付与
     detectGrid(list);
+
+    // 左上から右下の順にソート（行優先、同行内は左から右）
+    // IllustratorのY軸は上がプラスなので、centerYが大きいほど上＝行番号が小さい
+    list.sort(function(a, b) {
+        if (a.row !== b.row) return a.row - b.row;
+        return a.col - b.col;
+    });
+
     return list;
 }
 
@@ -400,15 +408,43 @@ function trim(s) {
 // Claude API でラベルリスト生成（uilg_helper.py 経由）
 // ============================================================
 function generateLabels(apiKey, buttonInfoList, settings, glossaryTerms) {
-    // ボタン説明：サイズ＋グリッド位置
+    // ボタン群の左上座標を基準にした相対座標を計算
+    var minX = buttonInfoList[0].centerX - buttonInfoList[0].innerW / 2;
+    var maxY = buttonInfoList[0].centerY + buttonInfoList[0].innerH / 2;
+    for (var i = 1; i < buttonInfoList.length; i++) {
+        var b = buttonInfoList[i];
+        var bLeft = b.centerX - b.innerW / 2;
+        var bTop  = b.centerY + b.innerH / 2;
+        if (bLeft < minX) minX = bLeft;
+        if (bTop  > maxY) maxY = bTop;
+    }
+
+    // ボタン説明：サイズ＋縦横比＋相対位置＋グリッド位置
     var btnDesc = [];
     var maxRow = 0; var maxCol = 0;
     for (var i = 0; i < buttonInfoList.length; i++) {
         var b = buttonInfoList[i];
         if (b.row > maxRow) maxRow = b.row;
         if (b.col > maxCol) maxCol = b.col;
-        var desc = "Button " + (i + 1) + ": w=" + Math.round(b.innerW) + "px h=" + Math.round(b.innerH) + "px";
+
+        var w = Math.round(b.innerW);
+        var h = Math.round(b.innerH);
+        var ratio = Math.round((b.innerW / b.innerH) * 10) / 10;
+
+        // 相対位置（左上基準、Illustratorのy軸を反転）
+        var relX = Math.round(b.centerX - b.innerW / 2 - minX);
+        var relY = Math.round(maxY - (b.centerY + b.innerH / 2));
+
+        var desc = "Button " + (i + 1) +
+            ": w=" + w + "px h=" + h + "px ratio=" + ratio +
+            " pos=(" + relX + "," + relY + ")";
+
         if (b.row > 0 && b.col > 0) desc += " row=" + b.row + " col=" + b.col;
+
+        // 横長・縦長の注記
+        if (ratio >= 2.0) desc += " [wide: likely spans multiple cols]";
+        if (ratio <= 0.6) desc += " [tall: likely spans multiple rows]";
+
         btnDesc.push(desc);
     }
 
