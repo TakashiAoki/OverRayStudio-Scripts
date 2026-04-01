@@ -1,10 +1,10 @@
-// UILabelGenerator.jsx  Ver.1.1.3
+// UILabelGenerator.jsx  Ver.1.2.1
 // Copyright (c) 2026 Over Ray Studio / Takashi Aoki @voyager_vision. All rights reserved.
 // LastUpdate: 2026/04/01
 // 選択したボタンパスにAI生成ラベルテキストを配置します
 
 var SCRIPT_NAME    = "UILabelGenerator";
-var SCRIPT_VERSION = "1.1.3";
+var SCRIPT_VERSION = "1.2.1";
 
 // ============================================================
 // 設定ファイルパス（スクリプトと同じフォルダ）
@@ -58,8 +58,13 @@ var GRAY_PALETTE = [0, 26, 51, 77, 102, 128, 153, 179, 204, 230, 242, 255];
     // キーワードからUIパターンヒントを検索
     settings.patternHint = findPatternHint(settings.keywords, presets);
 
-    // Claude API でラベルリスト生成
-    var labels = generateLabels(config.anthropic_api_key, buttonInfoList, settings, glossaryTerms);
+    // ラベル生成：連番モードかAI生成かを分岐
+    var labels;
+    if (settings.seq_mode) {
+        labels = generateSequentialLabels(buttonInfoList.length, settings);
+    } else {
+        labels = generateLabels(config.anthropic_api_key, buttonInfoList, settings, glossaryTerms);
+    }
     if (!labels || labels.length === 0) {
         alert("ラベルの生成に失敗しました");
         return;
@@ -107,6 +112,11 @@ function showDialog(config, presets, shapeCount) {
     dlg.alignChildren = ["fill", "top"];
     dlg.spacing = 8;
     dlg.margins = 16;
+
+    // 前回の表示位置を復元
+    if (last.dlg_x !== undefined && last.dlg_y !== undefined) {
+        dlg.location = [last.dlg_x, last.dlg_y];
+    }
 
     // ── プリセット
     var grpPreset = dlg.add("group");
@@ -166,6 +176,43 @@ function showDialog(config, presets, shapeCount) {
     var alignMap = { "LEFT": 0, "CENTER": 1, "RIGHT": 2 };
     ddAlign.selection = (last.align && alignMap[last.align] !== undefined) ? alignMap[last.align] : 1;
 
+    // ── 区切り線
+    dlg.add("panel", undefined, "");
+
+    // ── 連番モード
+    var grpSeq = dlg.add("group");
+    grpSeq.orientation = "column";
+    grpSeq.alignChildren = ["fill", "top"];
+    grpSeq.spacing = 4;
+
+    var grpSeqCheck = grpSeq.add("group");
+    var cbSeq = grpSeqCheck.add("checkbox", undefined, "Sequential Mode (skip AI)");
+    cbSeq.value = last.seq_mode || false;
+
+    var grpSeqFmt = grpSeq.add("group");
+    grpSeqFmt.add("statictext", undefined, "Format:");
+    var etSeqFmt = grpSeqFmt.add("edittext", undefined, last.seq_format || "CH {n}");
+    etSeqFmt.preferredSize.width = 120;
+    grpSeqFmt.add("statictext", undefined, " From:");
+    var etSeqStart = grpSeqFmt.add("edittext", undefined, String(last.seq_start || 0));
+    etSeqStart.preferredSize.width = 35;
+    grpSeqFmt.add("statictext", undefined, " Digits:");
+    var etSeqDigit = grpSeqFmt.add("edittext", undefined, String(last.seq_digit || 2));
+    etSeqDigit.preferredSize.width = 25;
+
+    // 書式ヒントを表示
+    var grpSeqHint = grpSeq.add("group");
+    grpSeqHint.add("statictext", undefined, " {n}=00,01 {N}=1,2 {A}=A,B {tc}=HH:MM:SS");
+
+    // 連番モードのON/OFFで入力欄の有効/無効を切り替え
+    function updateSeqUI() {
+        etSeqFmt.enabled  = cbSeq.value;
+        etSeqStart.enabled = cbSeq.value;
+        etSeqDigit.enabled = cbSeq.value;
+    }
+    cbSeq.onClick = updateSeqUI;
+    updateSeqUI();
+
     // ── ボタン
     var grpBtn = dlg.add("group");
     grpBtn.alignment = ["right", "center"];
@@ -194,7 +241,13 @@ function showDialog(config, presets, shapeCount) {
         font_ps:     selFont.postscript,
         font_size:   parseFloat(etSize.text) || 8,
         align:       alignKeys[ddAlign.selection.index],
-        text_anchor: "CENTER"
+        text_anchor: "CENTER",
+        seq_mode:    cbSeq.value,
+        seq_format:  etSeqFmt.text,
+        seq_start:   parseInt(etSeqStart.text) || 0,
+        seq_digit:   parseInt(etSeqDigit.text) || 2,
+        dlg_x:       dlg.location[0],
+        dlg_y:       dlg.location[1]
     };
 }
 
@@ -586,6 +639,56 @@ function generateLabels(apiKey, buttonInfoList, settings, glossaryTerms) {
 }
 
 // ============================================================
+// 連番ラベルを直接生成（AI不使用）
+// ============================================================
+function generateSequentialLabels(count, settings) {
+    var fmt   = settings.seq_format || "{n}";
+    var start = settings.seq_start  || 0;
+    var digit = settings.seq_digit  || 2;
+    var labels = [];
+
+    for (var i = 0; i < count; i++) {
+        var n = start + i;
+        var label = fmt;
+
+        // {n} → ゼロパディング数字
+        if (label.indexOf("{n}") !== -1) {
+            var s = String(n);
+            while (s.length < digit) s = "0" + s;
+            label = label.replace(/\{n\}/g, s);
+        }
+        // {N} → パディングなし数字
+        if (label.indexOf("{N}") !== -1) {
+            label = label.replace(/\{N\}/g, String(n));
+        }
+        // {A} → アルファベット（A〜Z、26超はAA,AB...）
+        if (label.indexOf("{A}") !== -1) {
+            var alpha = "";
+            var idx = n;
+            do {
+                alpha = String.fromCharCode(65 + (idx % 26)) + alpha;
+                idx = Math.floor(idx / 26) - 1;
+            } while (idx >= 0);
+            label = label.replace(/\{A\}/g, alpha);
+        }
+        // {tc} → タイムコード HH:MM:SS（start=秒数として扱う）
+        if (label.indexOf("{tc}") !== -1) {
+            var sec = n;
+            var hh  = Math.floor(sec / 3600);
+            var mm  = Math.floor((sec % 3600) / 60);
+            var ss  = sec % 60;
+            var tc  = (hh < 10 ? "0" : "") + hh + ":" +
+                      (mm < 10 ? "0" : "") + mm + ":" +
+                      (ss < 10 ? "0" : "") + ss;
+            label = label.replace(/\{tc\}/g, tc);
+        }
+
+        labels.push(label);
+    }
+    return labels;
+}
+
+// ============================================================
 // JSON文字列用エスケープ
 // ============================================================
 function escapeForJSON(s) {
@@ -708,7 +811,13 @@ function saveLastSettings(config, settings) {
     out += '    "font_label":  "' + escapeForJSON(settings.font_label)  + '",\n';
     out += '    "font_size":   '  + settings.font_size                  + ',\n';
     out += '    "align":       "' + escapeForJSON(settings.align)       + '",\n';
-    out += '    "text_anchor": "' + escapeForJSON(settings.text_anchor) + '"\n';
+    out += '    "text_anchor": "' + escapeForJSON(settings.text_anchor) + '",\n';
+    out += '    "seq_mode":    '  + (settings.seq_mode ? 'true' : 'false') + ',\n';
+    out += '    "seq_format":  "' + escapeForJSON(settings.seq_format || 'CH {n}') + '",\n';
+    out += '    "seq_start":   '  + (settings.seq_start || 0)           + ',\n';
+    out += '    "seq_digit":   '  + (settings.seq_digit || 2)           + ',\n';
+    out += '    "dlg_x":       '  + (settings.dlg_x || 100)                + ',\n';
+    out += '    "dlg_y":       '  + (settings.dlg_y || 100)                + '\n';
     out += '  }\n';
     out += '}\n';
 
