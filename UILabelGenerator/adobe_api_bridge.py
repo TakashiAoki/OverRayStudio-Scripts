@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# adobe_api_bridge.py  Ver.1.0.2
+# adobe_api_bridge.py  Ver.1.0.3
 # Copyright (c) 2026 Over Ray Studio / Takashi Aoki
 # LastUpdate: 2026/03/27
 #
@@ -35,8 +35,18 @@ def call_api(api_key: str, body: dict) -> dict:
         },
         method = "POST",
     )
-    with urllib.request.urlopen(req, timeout=30) as res:
-        return json.loads(res.read().decode("utf-8"))
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            with urllib.request.urlopen(req, timeout=30) as res:
+                return json.loads(res.read().decode("utf-8"))
+        except urllib.error.HTTPError as e:
+            if e.code == 529 and attempt < max_retries - 1:
+                wait = (attempt + 1) * 10  # 10秒、20秒と増やす
+                print(f"  → 529 Overloaded. {wait}秒後にリトライ ({attempt + 1}/{max_retries - 1})...")
+                time.sleep(wait)
+                continue
+            raise
 
 def process():
     # リネームして排他処理（競合防止）
@@ -83,7 +93,7 @@ def process():
 
 def main():
     print("=" * 52)
-    print("Adobe API Bridge  Ver.1.0.2  起動中")
+    print("Adobe API Bridge  Ver.1.0.3  起動中")
     print(f"監視: {REQ_PATH}")
     print("終了するには Ctrl+C を押してください")
     print("=" * 52)
