@@ -1,10 +1,10 @@
-// UILabelGenerator.jsx  Ver.1.2.1
+// UILabelGenerator.jsx  Ver.1.2.2
 // Copyright (c) 2026 Over Ray Studio / Takashi Aoki @voyager_vision. All rights reserved.
 // LastUpdate: 2026/04/01
 // 選択したボタンパスにAI生成ラベルテキストを配置します
 
 var SCRIPT_NAME    = "UILabelGenerator";
-var SCRIPT_VERSION = "1.2.1";
+var SCRIPT_VERSION = "1.2.2";
 
 // ============================================================
 // 設定ファイルパス（スクリプトと同じフォルダ）
@@ -558,6 +558,7 @@ function generateLabels(apiKey, buttonInfoList, settings, glossaryTerms) {
         '  "body": {\n' +
         '    "model": "claude-haiku-4-5-20251001",\n' +
         '    "max_tokens": 512,\n' +
+        '    "temperature": 1.0,\n' +
         '    "messages": [{"role": "user", "content": "' + escapeForJSON(promptText) + '"}]\n' +
         '  }\n' +
         '}';

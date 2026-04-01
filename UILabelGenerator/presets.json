@@ -160,7 +160,7 @@
         "menubar",
         "toolbar"
       ],
-      "hint": "This is an application menu bar or toolbar layout. Buttons are likely arranged horizontally in a single row. Infer the application type from additional keywords: if military/tactical context use labels like SYSTEM, COMMS, TACTICAL, SENSOR, DEPLOY, CONFIG, STATUS, INTEL; if medical context use FILE, PATIENT, VIEW, TOOLS, ANALYSIS, REPORT, HELP; if general app context use File, Edit, View, Insert, Format, Tools, Window, Help. If 5 or more buttons, expand with contextually appropriate submenu-style labels that fit the application domain. Keep labels concise (1-2 words max)."
+      "hint": "This is an application menu bar or toolbar. Generate menu item names that feel authentic to the application type suggested by the scene and keywords. Do NOT default to generic names like SYSTEM or FILE. Instead, invent contextually appropriate, varied menu names that fit the specific domain. For military/tactical apps: think about what a real operator would need quick access to. For medical apps: think about clinical workflows. For creative apps: think about creative tools and workflows. Each run should produce a different, plausible set of menu items. Keep labels concise (1-2 words), uppercase if SF/military context."
     },
     {
       "keywords": [
