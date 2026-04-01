@@ -1,10 +1,10 @@
-// UILabelGenerator.jsx  Ver.1.1.2
+// UILabelGenerator.jsx  Ver.1.1.3
 // Copyright (c) 2026 Over Ray Studio / Takashi Aoki @voyager_vision. All rights reserved.
 // LastUpdate: 2026/04/01
 // 選択したボタンパスにAI生成ラベルテキストを配置します
 
 var SCRIPT_NAME    = "UILabelGenerator";
-var SCRIPT_VERSION = "1.1.2";
+var SCRIPT_VERSION = "1.1.3";
 
 // ============================================================
 // 設定ファイルパス（スクリプトと同じフォルダ）
@@ -338,15 +338,17 @@ function getFillRGB(shape) {
 function findPatternHint(keywords, presets) {
     if (!keywords || !presets.ui_pattern_hints) return "";
     var kw = keywords.toLowerCase();
+    var matched = [];
     for (var i = 0; i < presets.ui_pattern_hints.length; i++) {
         var hint = presets.ui_pattern_hints[i];
         for (var j = 0; j < hint.keywords.length; j++) {
             if (kw.indexOf(hint.keywords[j].toLowerCase()) !== -1) {
-                return hint.hint;
+                matched.push(hint.hint);
+                break; // このヒントはマッチ済み、次へ
             }
         }
     }
-    return "";
+    return matched.join("\\n");
 }
 
 // ============================================================
