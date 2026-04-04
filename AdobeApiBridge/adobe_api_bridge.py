@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
-# adobe_api_bridge.py  Ver.1.0.3
+# adobe_api_bridge.py  Ver.1.0.5
 # Copyright (c) 2026 Over Ray Studio / Takashi Aoki
-# LastUpdate: 2026/03/27
+# LastUpdate: 2026/04/04
 #
 # AdobeアプリとClaude APIをつなぐ汎用ファイル監視ブリッジ。
 # Automatorアプリ（AdobeApiBridge.app）の Resources/ に同梱して使用。
 #
-# リクエスト形式: /tmp/_aab_req.json
+# リクエスト形式: /private/tmp/_aab_req.json
 #   { "api_key": "sk-ant-...", "body": { ...Anthropic APIリクエストbody... } }
-# レスポンス形式: /tmp/_aab_resp.json
+# レスポンス形式: /private/tmp/_aab_resp.json
 #   { "ok": true,  "response": { ...Anthropic APIレスポンス... } }
 #   { "ok": false, "error": "エラーメッセージ" }
+# 完了フラグ: /private/tmp/_aab_ready
+#   JSX側がreq.jsonを書き終えた後に作成する空ファイル。
+#   Pythonはこのファイルを監視することで書き込み中の競合を回避する。
 
 import json
 import time
@@ -18,10 +21,11 @@ import os
 import urllib.request
 import urllib.error
 
-REQ_PATH  = "/tmp/_aab_req.json"
-LOCK_PATH = "/tmp/_aab_req.json.lock"
-RESP_PATH = "/tmp/_aab_resp.json"
-POLL_SEC  = 0.5
+REQ_PATH   = "/private/tmp/_aab_req.json"
+LOCK_PATH  = "/private/tmp/_aab_req.json.lock"
+RESP_PATH  = "/private/tmp/_aab_resp.json"
+READY_PATH = "/private/tmp/_aab_ready"   # JSX側が書き込み完了後に作成するフラグ
+POLL_SEC   = 0.5
 
 def call_api(api_key: str, body: dict) -> dict:
     data = json.dumps(body).encode("utf-8")
@@ -49,17 +53,29 @@ def call_api(api_key: str, body: dict) -> dict:
             raise
 
 def process():
-    # リネームして排他処理（競合防止）
-    # リネームが失敗した場合は別プロセスが処理中なのでスキップ
-    try:
-        os.rename(REQ_PATH, LOCK_PATH)
-    except OSError:
-        return
+    # リネームして排他処理。readyフラグ削除後もreq.jsonの書き込みが
+    # 僅かに遅延する場合に備え、最大3回・100msインターバルでリトライ
+    for attempt in range(3):
+        try:
+            os.rename(REQ_PATH, LOCK_PATH)
+            break
+        except OSError:
+            if attempt < 2:
+                time.sleep(0.1)
+                continue
+            print("  → req.json が見つかりませんでした（スキップ）")
+            return
 
     result = None
     try:
         with open(LOCK_PATH, "r", encoding="utf-8") as f:
-            req = json.loads(f.read())
+            raw = f.read()
+
+        # 空ファイル・不正JSONの検出（JSX書き込み失敗の場合）
+        if not raw.strip():
+            raise ValueError("req.json が空です。JSX側の書き込みに失敗した可能性があります。")
+
+        req = json.loads(raw)
 
         api_key = req.get("api_key", "")
         caller  = req.get("caller",  "unknown")
@@ -75,6 +91,10 @@ def process():
         err_body = e.read().decode("utf-8")
         print(f"  → HTTPError {e.code}: {err_body[:200]}")
         result = {"ok": False, "error": f"HTTP {e.code}: {err_body[:300]}"}
+
+    except (ValueError, json.JSONDecodeError) as e:
+        print(f"  → req.jsonパースエラー: {e}")
+        result = {"ok": False, "error": f"req.jsonの読み込みに失敗しました: {e}"}
 
     except Exception as e:
         print(f"  → Error: {e}")
@@ -93,15 +113,20 @@ def process():
 
 def main():
     print("=" * 52)
-    print("Adobe API Bridge  Ver.1.0.3  起動中")
-    print(f"監視: {REQ_PATH}")
+    print("Adobe API Bridge  Ver.1.0.5  起動中")
+    print(f"監視: {READY_PATH}")
     print("終了するには Ctrl+C を押してください")
     print("=" * 52)
 
     try:
         while True:
-            if os.path.exists(REQ_PATH):
+            if os.path.exists(READY_PATH):
                 print(f"\n[{time.strftime('%H:%M:%S')}] リクエスト検知")
+                # フラグを先に削除（二重処理防止）
+                try:
+                    os.remove(READY_PATH)
+                except OSError:
+                    pass
                 process()
             time.sleep(POLL_SEC)
     except KeyboardInterrupt:
