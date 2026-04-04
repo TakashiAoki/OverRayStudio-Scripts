@@ -242,7 +242,53 @@
         "機体",
         "ユニット"
       ],
-      "hint": "This is a robot or mech unit status panel. Use robotics and military hardware terminology. For parameter names: SERVO, GYRO, ACCEL, TORQUE, JOINT, TEMP, VOLT, AMP, PWR, CPU, MEM, COMMS, SENSOR, CAMERA, RADAR, WEAPON, SHIELD, ARMOR, MOBILITY, BALANCE. For values: include realistic units like deg/s, Nm, C, V, A, W, %, rpm, m/s, kN. Status values: NOMINAL, ACTIVE, STANDBY, FAULT, OFFLINE, LOCKED, ARMED, SAFE."
+      "hint": "This is a robot or mech unit status panel. IMPORTANT: Never use SERVO as the first label. Each execution must start with a DIFFERENT subsystem category than previous runs. Rotate through these categories: power systems (reactor, battery, capacitor), mobility (thruster, gyro, balance, wheel), sensors (radar, lidar, camera, sonar), communications (comms, antenna, datalink), armor and structure (frame, hull, shield), weapons and payload (weapon, ammo, fire ctrl). Pick a random starting category each time. Use concise uppercase abbreviations. Max 10 chars per label. Vary your word choices. Do not repeat the same set across runs."
+    },
+    {
+      "keywords": [
+        "骨格系",
+        "関節",
+        "アクチュエーター",
+        "skeleton",
+        "joint"
+      ],
+      "hint": "This is a robot skeletal/actuator subsystem panel. Focus on mechanical structure: joints, linkages, bearings, actuators, frames, tendons. Example terms (do not copy verbatim, vary each run): joint angles, torque values, bearing load, link status, frame stress, actuator response. Use body part prefixes where appropriate: HEAD, TORSO, ARM, LEG, SHOULDER, ELBOW, WRIST, HIP, KNEE, ANKLE. Keep labels under 12 chars. Vary choices each execution."
+    },
+    {
+      "keywords": [
+        "センサー系",
+        "センサー",
+        "sensor array",
+        "知覚系"
+      ],
+      "hint": "This is a robot sensor/perception subsystem panel. Focus on sensing and perception systems. Example terms (vary each run): optical sensors, thermal imaging, radar, lidar, sonar, proximity, gyroscope, accelerometer, magnetometer. Prefixes: FRONT, REAR, LEFT, RIGHT, TOP, WIDE, NARROW. Keep labels under 12 chars. Do not repeat same terms across runs."
+    },
+    {
+      "keywords": [
+        "電装系",
+        "電源系",
+        "power system",
+        "電力"
+      ],
+      "hint": "This is a robot power/electrical subsystem panel. Focus on power generation, storage, and distribution. Example terms (vary each run): reactor output, battery level, voltage rails, current draw, thermal load, power factor, efficiency. Circuit identifiers: MAIN, SUB, AUX, BACKUP, PRIMARY. Keep labels under 12 chars. Vary each execution."
+    },
+    {
+      "keywords": [
+        "武装系",
+        "兵装",
+        "weapon system",
+        "armament"
+      ],
+      "hint": "This is a robot weapons/armament subsystem panel. Focus on weapons status, targeting, and defense systems. Example terms (vary each run): fire control, target lock, ammunition count, weapon temperature, shield integrity, countermeasures, weapons ready status, range finder, IFF status. Keep labels under 12 chars. Vary each execution."
+    },
+    {
+      "keywords": [
+        "左右",
+        "LR",
+        "bilateral",
+        "部位"
+      ],
+      "hint": "This panel has bilateral (left/right) symmetry in its layout. When assigning labels, pair left-side and right-side components. Use L prefix for left side, R prefix for right side. Examples: L ARM / R ARM, L LEG / R LEG, L SENSOR / R SENSOR, L THRUSTER / R THRUSTER. Make sure each L/R pair uses the same base term. Vary the body parts and subsystems chosen each execution."
     }
   ],
   "presets": [

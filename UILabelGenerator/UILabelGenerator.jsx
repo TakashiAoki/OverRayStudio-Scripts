@@ -1,10 +1,10 @@
-// UILabelGenerator.jsx  Ver.1.2.11
+// UILabelGenerator.jsx  Ver.1.2.12
 // Copyright (c) 2026 Over Ray Studio / Takashi Aoki @voyager_vision. All rights reserved.
 // LastUpdate: 2026/04/04
 // 選択したボタンパスにAI生成ラベルテキストを配置します
 
 var SCRIPT_NAME    = "UILabelGenerator";
-var SCRIPT_VERSION = "1.2.11";
+var SCRIPT_VERSION = "1.2.12";
 
 // ============================================================
 // 設定ファイルパス（スクリプトと同じフォルダ）
@@ -319,51 +319,67 @@ function getButtonInfoList(shapes) {
 
 // ============================================================
 // グリッド検出: centerX/Yの近似値でグループ化して行・列番号を付与
+// wide/tallボタンはグループ検出から除外し、後から最近傍で割り当て
 // ============================================================
 function detectGrid(list) {
-	var TOLERANCE = 10; // px以内は同じ行/列とみなす
+	var TOLERANCE = 10;// px以内は同じ行/列とみなす
+	var WIDE_RATIO = 1.8;
+	var TALL_RATIO = 0.6;
 
-	// centerX を昇順ソートして列グループを作成
+	// normalボタン（wide/tall以外）のみでcolGroups/rowGroupsを構築
 	var colGroups = [];
-	for (var i = 0; i < list.length; i++) {
-		var cx = list[i].centerX;
-		var found = false;
-		for (var g = 0; g < colGroups.length; g++) {
-			if (Math.abs(colGroups[g] - cx) <= TOLERANCE) {
-				found = true; break;
-			}
-		}
-		if (!found) colGroups.push(cx);
-	}
-	colGroups.sort(function(a, b) { return a - b; });
-
-	// centerY を昇順ソートして行グループ（Y軸は反転）
 	var rowGroups = [];
 	for (var i = 0; i < list.length; i++) {
-		var cy = list[i].centerY;
+		var b = list[i];
+		var ratio = (b.innerH > 0) ? b.innerW / b.innerH : 1;
+		if (ratio >= WIDE_RATIO || ratio <= TALL_RATIO) continue;// wide/tallは除外
+
+		var cx = b.centerX;
 		var found = false;
+		for (var g = 0; g < colGroups.length; g++) {
+			if (Math.abs(colGroups[g] - cx) <= TOLERANCE) { found = true; break; }
+		}
+		if (!found) colGroups.push(cx);
+
+		var cy = b.centerY;
+		found = false;
 		for (var g = 0; g < rowGroups.length; g++) {
-			if (Math.abs(rowGroups[g] - cy) <= TOLERANCE) {
-				found = true; break;
-			}
+			if (Math.abs(rowGroups[g] - cy) <= TOLERANCE) { found = true; break; }
 		}
 		if (!found) rowGroups.push(cy);
 	}
-	// IllustratorはY軸が上方向プラスなので降順＝上が行1
-	rowGroups.sort(function(a, b) { return b - a; });
+	colGroups.sort(function(a, b) { return a - b; });
+	rowGroups.sort(function(a, b) { return b - a; });// Y軸反転: 上が行1
 
-	// 各ボタンにrow/colを付与（1始まり）
+	// 全ボタンにrow/colを付与
+	// normalは完全一致、wide/tallは最近傍グループを採用
 	for (var i = 0; i < list.length; i++) {
+		var b = list[i];
+		var ratio = (b.innerH > 0) ? b.innerW / b.innerH : 1;
+		var isWide = (ratio >= WIDE_RATIO);
+		var isTall = (ratio <= TALL_RATIO);
+
+		// col割り当て
+		var bestColIdx = -1; var bestColDist = 9999;
 		for (var g = 0; g < colGroups.length; g++) {
-			if (Math.abs(colGroups[g] - list[i].centerX) <= TOLERANCE) {
-				list[i].col = g + 1; break;
+			var dist = Math.abs(colGroups[g] - b.centerX);
+			var thresh = (isWide || isTall) ? 9999 : TOLERANCE;// wide/tallは最近傍
+			if (dist <= thresh && dist < bestColDist) {
+				bestColDist = dist; bestColIdx = g;
 			}
 		}
+		if (bestColIdx >= 0) b.col = bestColIdx + 1;
+
+		// row割り当て
+		var bestRowIdx = -1; var bestRowDist = 9999;
 		for (var g = 0; g < rowGroups.length; g++) {
-			if (Math.abs(rowGroups[g] - list[i].centerY) <= TOLERANCE) {
-				list[i].row = g + 1; break;
+			var dist = Math.abs(rowGroups[g] - b.centerY);
+			var thresh = (isWide || isTall) ? 9999 : TOLERANCE;
+			if (dist <= thresh && dist < bestRowDist) {
+				bestRowDist = dist; bestRowIdx = g;
 			}
 		}
+		if (bestRowIdx >= 0) b.row = bestRowIdx + 1;
 	}
 }
 
