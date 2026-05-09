@@ -29,7 +29,7 @@ CSUM は **C**omposite **S**peed **U**p **M**odule の略で、2007 年に命名
 ### 作者
 
 **青木 隆 (Takashi Aoki)** / Over Ray Studio
-モニターグラフィックスデザイナー・26 年以上のキャリア。劇場アニメ・TV アニメ・SF 作品の UI / FUI デザインを担当。
+モニターグラフィックスデザイナー(2000 年〜)。劇場アニメ・TV アニメ・SF 作品の UI / FUI デザインを担当。
 
 - X (Twitter): [@voyager_vision](https://x.com/voyager_vision)
 - GitHub: [@TakashiAoki](https://github.com/TakashiAoki)
@@ -59,7 +59,7 @@ CSUM stands for **C**omposite **S**peed **U**p **M**odule — a script suite I s
 ### Author
 
 **Takashi Aoki** / Over Ray Studio
-Monitor / FUI graphic designer with 26+ years of experience, specializing in UI design for theatrical anime, TV anime, and sci-fi productions.
+Monitor / FUI graphic designer since 2000, specializing in UI design for theatrical anime, TV anime, and sci-fi productions.
 
 - X (Twitter): [@voyager_vision](https://x.com/voyager_vision)
 - GitHub: [@TakashiAoki](https://github.com/TakashiAoki)
