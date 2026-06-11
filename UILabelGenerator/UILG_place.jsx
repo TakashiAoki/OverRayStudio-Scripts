@@ -115,25 +115,39 @@
 		var WIDE_RATIO = 1.8;
 		var TALL_RATIO = 0.6;
 
-		var colGroups = [];
-		var rowGroups = [];
-		for (var i = 0; i < list.length; i++) {
-			var b = list[i];
-			var ratio = (b.innerH > 0) ? b.innerW / b.innerH : 1;
-			if (ratio >= WIDE_RATIO || ratio <= TALL_RATIO) continue;
+		// グリッド軸の構築。normal比率のボタンが1つもないパネル
+		// （FUIでは横長ボタンが主流のことも多い）では判定を緩めて再構築する
+		function buildGroups(loRatio, hiRatio) {
+			var cols = []; var rows = [];
+			for (var i = 0; i < list.length; i++) {
+				var b = list[i];
+				var ratio = (b.innerH > 0) ? b.innerW / b.innerH : 1;
+				if (ratio >= hiRatio || ratio <= loRatio) continue;
 
-			var found = false;
-			for (var g = 0; g < colGroups.length; g++) {
-				if (Math.abs(colGroups[g] - b.centerX) <= TOLERANCE) { found = true; break; }
-			}
-			if (!found) colGroups.push(b.centerX);
+				var found = false;
+				for (var g = 0; g < cols.length; g++) {
+					if (Math.abs(cols[g] - b.centerX) <= TOLERANCE) { found = true; break; }
+				}
+				if (!found) cols.push(b.centerX);
 
-			found = false;
-			for (var g = 0; g < rowGroups.length; g++) {
-				if (Math.abs(rowGroups[g] - b.centerY) <= TOLERANCE) { found = true; break; }
+				found = false;
+				for (var g = 0; g < rows.length; g++) {
+					if (Math.abs(rows[g] - b.centerY) <= TOLERANCE) { found = true; break; }
+				}
+				if (!found) rows.push(b.centerY);
 			}
-			if (!found) rowGroups.push(b.centerY);
+			return { cols: cols, rows: rows };
 		}
+
+		var groups = buildGroups(TALL_RATIO, WIDE_RATIO);
+		if (groups.cols.length === 0 || groups.rows.length === 0) {
+			groups = buildGroups(0.5, 3.0);  // 緩和: 極端な縦長/横長のみ除外
+		}
+		if (groups.cols.length === 0 || groups.rows.length === 0) {
+			groups = buildGroups(0, 9999);   // 最終: 全ボタンで構築
+		}
+		var colGroups = groups.cols;
+		var rowGroups = groups.rows;
 		colGroups.sort(function (a, b) { return a - b; });
 		rowGroups.sort(function (a, b) { return b - a; });
 
