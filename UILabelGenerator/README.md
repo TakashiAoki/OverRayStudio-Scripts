@@ -1,10 +1,41 @@
 # UILabelGenerator
 
-Illustrator で選択したボタンパスに、Claude API で生成した UI ラベルテキストを自動配置するスクリプトです。SF 作品のモニターグラフィックス(FUI)制作における、大量のボタン・表示要素へのラベル入れを効率化します。
+Illustrator で選択したボタンパスに、AI が生成した UI ラベルテキストを自動配置するスクリプトです。SF 作品のモニターグラフィックス(FUI)制作における、大量のボタン・表示要素へのラベル入れを効率化します。
 
-![Version](https://img.shields.io/badge/version-1.2.12-blue) ![Illustrator](https://img.shields.io/badge/Illustrator-CC%2B-ff9a00) ![Platform](https://img.shields.io/badge/platform-macOS-lightgrey) ![License](https://img.shields.io/badge/license-MIT-green)
+![Version](https://img.shields.io/badge/version-2.0.0-blue) ![Illustrator](https://img.shields.io/badge/Illustrator-CC%2B-ff9a00) ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-lightgrey) ![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
+
+## v2 アーキテクチャ(エージェント駆動)
+
+v2 では制御を反転し、AI エージェント(Claude Code 等)が Illustrator を外部から駆動します。
+スクリプト側から API を呼ぶ仕組み(常駐ブリッジ + ファイル監視 + ポーリング)を丸ごと廃止したため、
+**API キー・常駐アプリ・待機フリーズが不要**になりました。
+
+```
+v1: Illustrator(jsx) → tmpファイル → 常駐Python → Claude API → ポーリング待機(最大90秒)
+v2: AIエージェント → COM(Win) / osascript(Mac) → collect.jsx で形状回収
+    → エージェント自身がラベル生成 → place.jsx で配置
+```
+
+| ファイル | 役割 |
+|---|---|
+| `UILG_collect.jsx` | 選択シェイプの寸法・グリッド構造・塗色を解析し JSON で返す |
+| `UILG_place.jsx` | テンポラリの入力 JSON(ラベル配列+フォント設定)を読み、`UI_Labels` レイヤーに配置 |
+
+- 実行エージェント側の呼び出し例(Windows / PowerShell + COM):
+  `(New-Object -ComObject Illustrator.Application).DoJavaScript($jsxCode)`
+- macOS は `osascript -l JavaScript` の `doJavascript` で同じ jsx を実行可能
+- 既存の `UI_Label` テキストは配置前に自動クリア(会話しながら何度でも再生成できる)
+- 配置先は専用レイヤー `UI_Labels`(非表示・ロック中レイヤーには触れない)
+- グリッド検出は v1 を継承: 行列構造 + 縦長キー(ENTER 等) + 横長キー(0 等)を認識
+
+v1(ダイアログ UI 版・下記)も引き続き利用できます。連番・テンキー・電話キーの
+固定割り当てはオフラインで動作するため、AI を介さない単独実行に向いています。
+
+---
+
+## v1(スタンドアロン版)
 
 ## 特徴
 
